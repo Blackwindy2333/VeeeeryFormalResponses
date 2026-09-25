@@ -1,0 +1,28 @@
+# 配置与本地数据（含 API Key，禁止入库）
+config.json
+config.local.json
+data/
+*.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+.coverage
+htmlcov/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# 临时导出
+*.tmp
+*.log
