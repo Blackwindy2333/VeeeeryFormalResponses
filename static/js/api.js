@@ -88,4 +88,18 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+
+  async exportText(payload) {
+    return request("/api/export/text", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async exportDocx(payload) {
+    return request("/api/export/docx", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
 };

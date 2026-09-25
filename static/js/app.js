@@ -17,6 +17,13 @@ import {
   applyThemeFromConfig,
   openSettings,
 } from "./settings.js";
+import {
+  exportCurrentAsText,
+  exportCurrentAsDocx,
+  syncSessionToBackend,
+  loadSessionsFromBackend,
+  deleteSessionRemote,
+} from "./export.js";
 
 function renderSessions() {
   const list = $("#session-list");
@@ -95,6 +102,7 @@ function bindSidebar() {
       if (act === "delete") {
         if (confirm("删除该对话？")) {
           store.deleteSession(id);
+          deleteSessionRemote(id);
           renderSessions();
           renderMessages();
         }
@@ -171,6 +179,8 @@ function bindHeader() {
   });
 
   $("#btn-export-pdf")?.addEventListener("click", () => exportLastAsPrint());
+  $("#btn-export-text")?.addEventListener("click", () => exportCurrentAsText());
+  $("#btn-export-docx")?.addEventListener("click", () => exportCurrentAsDocx());
 
   $("#btn-copy-last")?.addEventListener("click", async () => {
     const session = store.getActiveSession();
@@ -240,8 +250,9 @@ async function loadConfigFromBackend() {
 }
 
 function bindStore() {
-  store.subscribe(() => {
-    // 避免全量重绘打断输入；仅在需要时刷新侧栏标题
+  store.subscribe((state) => {
+    const s = state.sessions.find((x) => x.id === state.activeSessionId);
+    if (s) syncSessionToBackend(s);
   });
 }
 
@@ -253,6 +264,7 @@ async function main() {
   bindSettingsEvents();
   bindStore();
   await loadConfigFromBackend();
+  await loadSessionsFromBackend();
   applyThemeFromConfig();
   refreshDocTypeOptions();
   refreshComposerToggles();
