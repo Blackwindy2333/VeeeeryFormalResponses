@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公文对话 · Veeeery Formal</title>
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="stylesheet" href="css/document.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- 侧栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">文</div>
+          <div class="brand-text">
+            <div class="brand-title">公文对话</div>
+            <div class="brand-sub">Veeeery Formal</div>
+          </div>
+          <button class="icon-btn" id="btn-toggle-sidebar" title="收起侧栏" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+          </button>
+        </div>
+        <button class="new-chat-btn" id="btn-new-chat" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          <span>开启新对话</span>
+        </button>
+        <div class="sidebar-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="search" id="session-search" placeholder="搜索对话" />
+        </div>
+      </div>
+
+      <nav class="session-list" id="session-list" aria-label="历史对话"></nav>
+
+      <div class="sidebar-bottom">
+        <button class="sidebar-action" id="btn-settings" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 5 8.9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9.5A1.7 1.7 0 0 0 10.5 3V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          <span>设置</span>
+        </button>
+        <div class="sidebar-user">
+          <div class="avatar">用</div>
+          <div class="user-meta">
+            <div class="user-name" id="user-display-name">本地用户</div>
+            <div class="user-tag">配置存于本机</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main">
+      <header class="main-header">
+        <button class="icon-btn mobile-only" id="btn-open-sidebar" type="button" title="打开侧栏">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="header-title" id="header-title">新对话</div>
+        <div class="header-actions">
+          <button class="ghost-btn" id="btn-export-pdf" type="button" title="打印/导出 PDF">导出 PDF</button>
+          <button class="ghost-btn" id="btn-copy-last" type="button" title="复制最后一篇公文">复制正文</button>
+          <button class="icon-btn" id="btn-theme" type="button" title="切换深浅色">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-scroll" id="chat-scroll">
+        <div class="welcome" id="welcome">
+          <div class="welcome-logo" aria-hidden="true">文</div>
+          <h1>欢迎使用公文对话</h1>
+          <p class="welcome-sub">AI 回复将按公文版式呈递，可配置模型提供商、思考强度与文种。</p>
+          <div class="welcome-cards">
+            <button class="welcome-card" data-prompt="请就本季度工作完成情况起草一份情况报告。" type="button">
+              <div class="wc-title">起草情况报告</div>
+              <div class="wc-desc">按「报告」文种组织，含情况、问题与打算</div>
+            </button>
+            <button class="welcome-card" data-prompt="请草拟一份关于开展专项检查的通知。" type="button">
+              <div class="wc-title">草拟工作通知</div>
+              <div class="wc-desc">通知事项、时间安排与工作要求</div>
+            </button>
+            <button class="welcome-card" data-prompt="请用公文语体说明项目延期的原因与后续安排。" type="button">
+              <div class="wc-title">正式事项说明</div>
+              <div class="wc-desc">准确、简明、克制的书面表达</div>
+            </button>
+          </div>
+        </div>
+        <div class="messages" id="messages" hidden></div>
+      </div>
+
+      <footer class="composer-wrap">
+        <div class="composer">
+          <div class="composer-toolbar">
+            <label class="chip">
+              <span class="chip-label">文种</span>
+              <select id="doc-type" aria-label="公文文种"></select>
+            </label>
+            <label class="chip chip-toggle" id="chip-thinking">
+              <input type="checkbox" id="toggle-thinking" />
+              <span>深度思考</span>
+            </label>
+            <label class="chip chip-toggle" id="chip-tools">
+              <input type="checkbox" id="toggle-tools" />
+              <span>工具调用</span>
+            </label>
+            <label class="chip">
+              <span class="chip-label">强度</span>
+              <select id="thinking-effort" aria-label="思考强度">
+                <option value="low">低</option>
+                <option value="medium" selected>中</option>
+                <option value="high">高</option>
+              </select>
+            </label>
+          </div>
+          <div class="composer-input-row">
+            <textarea
+              id="input-box"
+              rows="1"
+              placeholder="给公文助手发送消息，Shift+Enter 换行"
+              aria-label="消息输入框"
+            ></textarea>
+            <div class="composer-actions">
+              <button class="send-btn" id="btn-send" type="button" title="发送">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </button>
+              <button class="send-btn stop-btn" id="btn-stop" type="button" title="停止生成" hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="composer-meta">
+            <span id="status-text">就绪</span>
+            <span id="usage-text"></span>
+          </div>
+        </div>
+        <p class="composer-disclaimer">演示界面 · 回复为模型生成内容，不具有法定公文效力</p>
+      </footer>
+    </main>
+  </div>
+
+  <!-- 设置抽屉 -->
+  <div class="drawer-root" id="settings-root" hidden>
+    <div class="drawer-backdrop" id="settings-backdrop"></div>
+    <aside class="drawer" role="dialog" aria-label="设置">
+      <header class="drawer-header">
+        <h2>设置</h2>
+        <button class="icon-btn" id="btn-close-settings" type="button" title="关闭">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="drawer-body" id="settings-body">
+        <!-- 由 settings.js 渲染 -->
+      </div>
+      <footer class="drawer-footer">
+        <button class="ghost-btn" id="btn-settings-reset" type="button">恢复默认</button>
+        <button class="primary-btn" id="btn-settings-save" type="button">保存设置</button>
+      </footer>
+    </aside>
+  </div>
+
+  <!-- 轻提示 -->
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

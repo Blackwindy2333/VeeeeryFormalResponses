@@ -1,0 +1,240 @@
+﻿/* ===== 公文纸面（轻量 GB/T 观感） ===== */
+.doc-paper {
+  --doc-bg: #fcfbf7;
+  --doc-ink: #24201d;
+  --doc-border: #d8d1c6;
+  --doc-accent: #8b1e1e;
+  --doc-muted: #6b645c;
+  background: var(--doc-bg);
+  color: var(--doc-ink);
+  border: 1px solid var(--doc-border);
+  border-radius: 2px;
+  padding: 28px 36px 24px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+[data-theme="dark"] .doc-paper {
+  /* 公文纸面在暗色 chrome 下仍保持浅色纸张 */
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+.doc-masthead {
+  text-align: center;
+  color: var(--doc-accent);
+  font-family: "SimSun", "Songti SC", "STSong", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 10px;
+}
+
+.doc-rule {
+  border: none;
+  border-top: 2px solid var(--doc-accent);
+  margin: 0 0 8px;
+}
+
+.doc-meta-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--doc-muted);
+  font-family: "SimSun", "Songti SC", serif;
+  margin-bottom: 18px;
+}
+
+.doc-title {
+  text-align: center;
+  font-family: "SimHei", "Heiti SC", "Microsoft YaHei", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.55;
+  margin: 8px 0 22px;
+  letter-spacing: 0.04em;
+}
+
+.doc-greeting {
+  font-family: "FangSong", "FangSong_GB2312", "STFangsong", "仿宋", serif;
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.doc-body {
+  font-family: "FangSong", "FangSong_GB2312", "STFangsong", "仿宋", serif;
+  font-size: 16px;
+  line-height: 1.95;
+  text-align: justify;
+}
+
+.doc-body p {
+  margin: 0 0 0.85em;
+}
+
+.doc-body.indent p {
+  text-indent: 2em;
+}
+
+.doc-body h1,
+.doc-body h2,
+.doc-body h3,
+.doc-body h4 {
+  font-weight: 700;
+  margin: 1.1em 0 0.55em;
+  line-height: 1.5;
+}
+
+/* 层次序号字体：一、黑体；（一）楷体；1. 及以下仿宋 */
+.doc-body.hierarchy h1 {
+  font-family: "SimHei", "Heiti SC", sans-serif;
+  font-size: 16px;
+}
+.doc-body.hierarchy h2 {
+  font-family: "KaiTi", "Kaiti SC", "STKaiti", serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+.doc-body.hierarchy h3,
+.doc-body.hierarchy h4 {
+  font-family: "FangSong", "FangSong_GB2312", "STFangsong", serif;
+  font-size: 16px;
+}
+
+.doc-body ul,
+.doc-body ol {
+  margin: 0.4em 0 0.9em;
+  padding-left: 2em;
+}
+.doc-body li { margin: 0.25em 0; }
+
+.doc-body code,
+.doc-body pre {
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 0.92em;
+}
+.doc-body pre {
+  background: #f3f1ea;
+  border: 1px solid var(--doc-border);
+  padding: 12px 14px;
+  overflow: auto;
+  text-indent: 0;
+  line-height: 1.55;
+}
+.doc-body code {
+  background: #f3f1ea;
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+}
+.doc-body pre code { background: none; padding: 0; }
+
+.doc-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8em 0 1em;
+  font-size: 14px;
+}
+.doc-body th,
+.doc-body td {
+  border: 1px solid var(--doc-border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.doc-body th {
+  background: #f3f1ea;
+  font-family: "SimHei", "Heiti SC", sans-serif;
+  font-weight: 600;
+}
+
+.doc-body blockquote {
+  margin: 0.8em 0;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 3px solid var(--doc-border);
+  color: var(--doc-muted);
+}
+
+.doc-closing {
+  font-family: "FangSong", "FangSong_GB2312", "STFangsong", serif;
+  font-size: 16px;
+  margin: 1.6em 0 0.4em;
+}
+
+.doc-sign-block {
+  margin-top: 1.4em;
+  text-align: right;
+  font-family: "FangSong", "FangSong_GB2312", "STFangsong", serif;
+  font-size: 16px;
+  line-height: 1.9;
+}
+.doc-sign-block .role {
+  color: var(--doc-muted);
+  font-size: 14px;
+}
+.doc-sign-block .name {
+  /* 右空约四字观感 */
+  margin-right: 1.2em;
+}
+.doc-sign-block .date {
+  margin-right: 0.4em;
+}
+
+.doc-note {
+  margin-top: 1.2em;
+  font-size: 13px;
+  color: var(--doc-muted);
+  font-family: "FangSong", "FangSong_GB2312", serif;
+  text-indent: 2em;
+}
+
+.doc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.doc-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f3f1ea;
+  color: var(--doc-muted);
+  border: 1px solid var(--doc-border);
+}
+
+.doc-pending .doc-sign-block,
+.doc-pending .doc-closing {
+  display: none;
+}
+
+/* 流式生成中：题头/标题/称谓/正文可见，落款后补 */
+.doc-paper.streaming .doc-sign-block,
+.doc-paper.streaming .doc-closing {
+  visibility: hidden;
+}
+
+/* 打印 / A4 导出 */
+@media print {
+  body { background: #fff; }
+  .sidebar, .main-header, .composer-wrap, .drawer-root, .toast,
+  .msg-row.user, .msg-actions, .msg-meta, .welcome, .doc-badges {
+    display: none !important;
+  }
+  .app { display: block; height: auto; }
+  .main { height: auto; display: block; }
+  .chat-scroll { overflow: visible; padding: 0; }
+  .messages { max-width: none; gap: 24px; }
+  .doc-paper {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    break-inside: avoid;
+  }
+  @page {
+    size: A4;
+    margin: 25mm 20mm 25mm 28mm;
+  }
+  .print-only { display: block !important; }
+}
+
+.print-only { display: none; }
