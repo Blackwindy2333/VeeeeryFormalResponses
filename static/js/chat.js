@@ -162,14 +162,22 @@ export async function sendMessage(text, { regenerate = false, transform = null }
       },
       onDone: (payload) => {
         const parsed = parseDocumentMeta(full || payload?.content || "");
+        const usage = payload?.usage || null;
         store.updateMessage(session.id, assistant.id, {
           content: full || payload?.content || "",
           parsed,
           streaming: false,
-          usage: payload?.usage || null,
+          usage,
           elapsedMs: Date.now() - started,
           reasoning: reasoning || null,
         });
+        if (usage && store.state.config?.ui?.show_token_usage !== false) {
+          const pt = usage.prompt_tokens ?? "-";
+          const ct = usage.completion_tokens ?? "-";
+          setUsage(`tokens ${pt} / ${ct}`);
+        } else {
+          setUsage("");
+        }
       },
     });
   } catch (err) {
