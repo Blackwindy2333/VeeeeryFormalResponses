@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import re
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -20,6 +21,8 @@ from server.config import (
 )
 from server.llm import LLMError, run_stream
 from server.prompt import build_messages, split_meta_and_body, transform_prompt
+from server.document import build_document_view, to_plain_text, try_export_docx
+from server import sessions as session_store
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static"
@@ -93,8 +96,16 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {"ok": True, "version": "0.1.0"})
             elif path == "/api/config":
                 cfg = load_config()
-                # 不向前端返回完整 api_key 明文可选；本工具为本机使用，返回完整配置便于编辑
                 self._json(200, {"config": cfg})
+            elif path == "/api/sessions":
+                self._json(200, {"sessions": session_store.list_sessions()})
+            elif path.startswith("/api/sessions/"):
+                sid = path.rsplit("/", 1)[-1]
+                session = session_store.load_session(sid)
+                if not session:
+                    self._json(404, {"error": "session not found"})
+                else:
+                    self._json(200, {"session": session})
             else:
                 self._serve_static(path)
         except Exception as e:  # noqa: BLE001
@@ -115,6 +126,37 @@ class Handler(BaseHTTPRequestHandler):
                 self._handle_chat()
             elif path == "/api/transform":
                 self._handle_transform()
+            elif path == "/api/sessions":
+                body = self._read_json()
+                session = body.get("session") or body
+                if not isinstance(session, dict) or not session.get("id"):
+                    raise ValueError("session.id required")
+                session_store.save_session(session)
+                self._json(200, {"ok": True, "session": session})
+            elif path.startswith("/api/sessions/") and path.endswith("/delete"):
+                sid = path.split("/")[-2]
+                ok = session_store.delete_session(sid)
+                self._json(200, {"ok": ok})
+            elif path == "/api/export/text":
+                body = self._read_json()
+                view = self._view_from_body(body)
+                self._json(200, {"text": to_plain_text(view), "view": view})
+            elif path == "/api/export/docx":
+                body = self._read_json()
+                view = self._view_from_body(body)
+                out_dir = ROOT_DIR / "data" / "exports"
+                out_dir.mkdir(parents=True, exist_ok=True)
+                filename = re.sub(r'[\\/:*?"<>|]', "_", (view.get("title_display") or "公文"))[:40]
+                out_path = out_dir / f"{filename}.docx"
+                ok = try_export_docx(view, str(out_path))
+                self._json(
+                    200,
+                    {
+                        "ok": ok,
+                        "path": str(out_path) if ok else None,
+                        "message": "" if ok else "python-docx 不可用，已跳过",
+                    },
+                )
             else:
                 self._json(404, {"error": "not found"})
         except ValueError as e:
@@ -140,6 +182,29 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(500, {"error": str(e)})
         else:
             self._json(404, {"error": "not found"})
+
+    def do_DELETE(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        if parsed.path.startswith("/api/sessions/"):
+            sid = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+            ok = session_store.delete_session(sid)
+            self._json(200, {"ok": ok})
+        else:
+            self._json(404, {"error": "not found"})
+
+    def _view_from_body(self, body: dict[str, Any]) -> dict[str, Any]:
+        content = str(body.get("content") or "")
+        doc_type = str(body.get("doc_type") or body.get("docType") or "报告")
+        cfg = body.get("config")
+        if not isinstance(cfg, dict):
+            cfg = load_config()
+        return build_document_view(
+            content,
+            cfg,
+            doc_type=doc_type,
+            usage=body.get("usage"),
+            elapsed_ms=body.get("elapsed_ms"),
+        )
 
     # ---------- API impl ----------
     def _handle_chat(self) -> None:
