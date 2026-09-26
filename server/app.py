@@ -61,11 +61,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_static(self, path: str) -> None:
         rel = path.lstrip("/") or "index.html"
-        if rel == "app" or rel == "":
+        if rel == "":
             rel = "index.html"
-        # 防目录穿越
+        # 防目录穿越：resolve 后必须仍在 STATIC_DIR 内
+        static_root = STATIC_DIR.resolve()
         target = (STATIC_DIR / rel).resolve()
-        if not str(target).startswith(str(STATIC_DIR.resolve())):
+        try:
+            target.relative_to(static_root)
+        except ValueError:
             self._json(403, {"error": "forbidden"})
             return
         if target.is_dir():
@@ -224,29 +227,28 @@ class Handler(BaseHTTPRequestHandler):
         )
 
     def _run_non_stream(self, messages: list[dict[str, Any]], options: dict[str, Any]) -> dict[str, Any]:
-        from server.llm import create_completion, extract_delta_text, extract_usage
+        from server.llm import create_completion, extract_usage
 
         cfg = load_config()
         provider_id = options.pop("provider_id", None)
-        stream = create_completion(
+        result = create_completion(
             cfg,
             messages,
             provider_id=provider_id,
             stream=False,
             **options,
         )
-        if isinstance(stream, dict):
-            choices = stream.get("choices") or []
+        if isinstance(result, dict):
+            choices = result.get("choices") or []
             content = ""
             if choices:
                 msg = choices[0].get("message") or {}
                 content = msg.get("content") or ""
             return {
                 "content": content,
-                "usage": extract_usage(stream),
+                "usage": extract_usage(result),
                 "reasoning": "",
             }
-        # 兜底
         return {"content": "", "usage": None, "reasoning": ""}
 
     def _handle_transform(self) -> None:
@@ -303,8 +305,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
+        self.send_header("Connection", "close")
         self.end_headers()
+        # SSE 无 Content-Length，HTTP/1.1 下须在结束时关闭连接
+        self.close_connection = True
 
         def send_event(payload: dict[str, Any]) -> None:
             raw = json.dumps(payload, ensure_ascii=False)

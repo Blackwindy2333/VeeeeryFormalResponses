@@ -41,9 +41,13 @@ def test_build_payload_basic():
     assert payload["temperature"] == 0.7
     assert payload["top_p"] == 0.9
     assert payload["max_tokens"] == 1024
-    assert payload["extra_body"]["thinking"]["type"] == "disabled"
-    assert payload["tool_choice"] == "none"
+    # thinking 必须是顶层字段（SDK extra_body 展开后才是 HTTP 体）
+    assert payload["thinking"]["type"] == "disabled"
+    assert "extra_body" not in payload
+    # 关闭工具时不传 tool_choice，避免无 tools 时被拒
+    assert "tool_choice" not in payload
     assert "reasoning_effort" not in payload
+    assert payload["stream_options"] == {"include_usage": True}
 
 
 def test_build_payload_thinking_and_tools():
@@ -52,7 +56,8 @@ def test_build_payload_thinking_and_tools():
         [{"role": "user", "content": "hi"}],
     )
     assert payload["reasoning_effort"] == "high"
-    assert payload["extra_body"]["thinking"]["type"] == "enabled"
+    assert payload["thinking"]["type"] == "enabled"
+    assert payload["thinking"]["effort"] == "high"
     assert payload["tool_choice"] == "auto"
 
 
@@ -65,7 +70,18 @@ def test_build_payload_overrides():
         tools_enabled=True,
     )
     assert payload["reasoning_effort"] == "low"
+    assert payload["thinking"]["type"] == "enabled"
     assert payload["tool_choice"] == "auto"
+
+
+def test_build_payload_non_stream_omits_stream_options():
+    payload = build_payload(
+        _provider(),
+        [{"role": "user", "content": "hi"}],
+        stream=False,
+    )
+    assert payload["stream"] is False
+    assert "stream_options" not in payload
 
 
 def test_build_payload_from_config_sampling():

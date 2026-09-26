@@ -58,10 +58,27 @@ def test_normalize_fills_missing_fields():
     assert cfg["document"]["masthead"] == "H"
     assert cfg["document"]["greeting"]  # 默认补齐
     provider = cfg["providers"][0]
-    assert provider["model"]
+    # 中性模板：不得继承 DeepSeek 的 model/base_url
+    assert provider["model"] == ""
+    assert provider["base_url"] == ""
+    assert provider["nickname"] == "自定义"
     assert "tools_enabled" in provider
     assert provider["thinking"]["effort"] in {"low", "medium", "high"}
     assert cfg["active_provider_id"] == "custom"
+
+
+def test_normalize_does_not_leak_deepseek_model():
+    cfg = normalize_config(
+        {
+            "providers": [
+                {"id": "a", "nickname": "A", "api_key": "1", "model": "m-a"},
+                {"id": "b", "nickname": "B", "api_key": "2"},
+            ]
+        }
+    )
+    assert cfg["providers"][0]["model"] == "m-a"
+    assert cfg["providers"][1]["model"] == ""
+    assert cfg["providers"][1]["base_url"] == ""
 
 
 def test_normalize_repairs_bad_active_provider():
@@ -87,6 +104,10 @@ def test_corrupt_config_rewritten(tmp_path: Path):
     path.write_text("{not-json", encoding="utf-8")
     cfg = load_config(path)
     assert cfg["providers"]
+    # 损坏配置应备份，而不是静默销毁
+    bak = tmp_path / "config.corrupt.bak"
+    assert bak.exists()
+    assert "{not-json" in bak.read_text(encoding="utf-8")
     assert json.loads(path.read_text(encoding="utf-8"))
 
 

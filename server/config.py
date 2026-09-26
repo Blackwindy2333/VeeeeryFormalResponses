@@ -83,6 +83,22 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 
+# 新增提供商时的中性模板（不得继承某一厂商的 model/base_url）
+_PROVIDER_TEMPLATE: dict[str, Any] = {
+    "id": "",
+    "nickname": "",
+    "base_url": "",
+    "api_key": "",
+    "model": "",
+    "thinking": {
+        "enabled": False,
+        "effort": "medium",
+    },
+    "tools_enabled": False,
+    "extra_headers": {},
+}
+
+
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """递归合并 override 到 base 的副本，override 优先。"""
     result = copy.deepcopy(base)
@@ -113,13 +129,15 @@ def normalize_config(raw: dict[str, Any]) -> dict[str, Any]:
         merged["providers"] = copy.deepcopy(DEFAULT_CONFIG["providers"])
     else:
         normalized_providers = []
-        template = DEFAULT_CONFIG["providers"][0]
         for item in providers:
             if not isinstance(item, dict):
                 continue
-            provider = _deep_merge(template, item)
+            # 用中性模板补齐，避免新提供商继承 DeepSeek 的 model/base_url
+            provider = _deep_merge(_PROVIDER_TEMPLATE, item)
             if not provider.get("id"):
                 provider["id"] = f"provider-{len(normalized_providers) + 1}"
+            if not provider.get("nickname"):
+                provider["nickname"] = provider["id"]
             normalized_providers.append(provider)
         merged["providers"] = normalized_providers or copy.deepcopy(
             DEFAULT_CONFIG["providers"]
@@ -142,7 +160,12 @@ def load_config(path: Path | str | None = None) -> dict[str, Any]:
         try:
             raw = json.loads(config_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
-            # 损坏时不覆盖用户文件内容到内存错误态，返回默认并重写备份策略：直接写默认
+            # 损坏配置：备份后写入默认，避免静默丢失 API Key 等
+            try:
+                backup = config_path.with_suffix(".corrupt.bak")
+                config_path.replace(backup)
+            except OSError:
+                pass
             cfg = default_config()
             save_config(cfg, config_path)
             return cfg

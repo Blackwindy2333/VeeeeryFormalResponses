@@ -55,11 +55,35 @@ def test_build_messages_skips_invalid():
     assert roles == ["system", "user"]
 
 
+def test_build_messages_skips_empty_placeholder():
+    msgs = build_messages(
+        [
+            {"role": "user", "content": "写通知"},
+            {"role": "assistant", "content": ""},
+            {"role": "assistant", "content": "   "},
+            {"role": "user", "content": "继续"},
+        ]
+    )
+    contents = [m["content"] for m in msgs if m["role"] != "system"]
+    assert contents == ["写通知", "继续"]
+
+
 def test_parse_title_ok():
     text = (
         '```json\n{"document": {"title": "关于开展专项检查的通知"}}\n```\n\n正文开始。'
     )
     assert parse_document_title(text) == "关于开展专项检查的通知"
+
+
+def test_parse_title_nested_extra_fields():
+    text = (
+        '```json\n{"document": {"title": "关于A的报告", "doc_type": "报告"}, "x": 1}\n```\n正文'
+    )
+    assert parse_document_title(text) == "关于A的报告"
+    title, body = split_meta_and_body(text)
+    assert title == "关于A的报告"
+    assert "正文" in body
+    assert "document" not in body
 
 
 def test_parse_title_codex_compat():

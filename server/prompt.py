@@ -46,11 +46,6 @@ DOC_TYPE_GUIDANCE: dict[str, str] = {
     },
 }
 
-TITLE_PATTERN = re.compile(
-    r"```\s*json\s*\n(\{[\s\S]*?\})\s*```",
-    re.IGNORECASE,
-)
-
 _SYSTEM_TEMPLATE = """你是公文写作助手。用户将提出问题或任务，你须以正式、克制、准确的书面公文语体作答。
 
 ## 输出契约（必须严格遵守）
@@ -106,15 +101,17 @@ def build_messages(
         {"role": "system", "content": build_system_prompt(doc_type, system_extra)}
     ]
     for item in history:
+        if not isinstance(item, dict):
+            continue
         role = item.get("role")
         content = item.get("content")
         if role not in {"user", "assistant", "system", "tool"} or content is None:
             continue
-        if role == "system":
-            # 保留用户附加 system，但放在我们的公文规则之后
-            messages.append({"role": "system", "content": str(content)})
+        text = str(content)
+        # 跳过空消息（例如流式占位 assistant），避免污染上下文
+        if role in {"user", "assistant"} and not text.strip():
             continue
-        messages.append({"role": role, "content": str(content)})
+        messages.append({"role": role, "content": text})
     return messages
 
 
@@ -122,28 +119,51 @@ def parse_document_title(text: str) -> str | None:
     """从模型输出解析 document.title；失败返回 None。"""
     if not text:
         return None
-    m = TITLE_PATTERN.search(text)
-    if not m:
-        return None
-    try:
-        obj = json.loads(m.group(1))
-    except json.JSONDecodeError:
-        return None
-    title = None
-    if isinstance(obj, dict):
-        doc = obj.get("document") or obj.get("codex_document") or obj
-        if isinstance(doc, dict):
-            title = doc.get("title")
-    if isinstance(title, str) and title.strip():
-        return title.strip()
+    for block in _iter_json_fences(text):
+        try:
+            obj = json.loads(block)
+        except json.JSONDecodeError:
+            continue
+        title = None
+        if isinstance(obj, dict):
+            doc = obj.get("document") or obj.get("codex_document") or obj
+            if isinstance(doc, dict):
+                title = doc.get("title")
+        if isinstance(title, str) and title.strip():
+            return title.strip()
     return None
+
+
+def _iter_json_fences(text: str) -> list[str]:
+    """取出所有 ```json / ``` 代码块内容。"""
+    return re.findall(r"```(?:json)?\s*\n([\s\S]*?)```", text, flags=re.IGNORECASE)
 
 
 def split_meta_and_body(text: str) -> tuple[str | None, str]:
     """拆出标题与正文（去掉 metadata 代码块）。"""
     title = parse_document_title(text)
-    body = TITLE_PATTERN.sub("", text).strip()
-    return title, body
+    if not title:
+        return None, text.strip()
+
+    def _drop_meta(match: re.Match[str]) -> str:
+        block = match.group(1)
+        try:
+            obj = json.loads(block)
+        except json.JSONDecodeError:
+            return match.group(0)
+        if isinstance(obj, dict) and (
+            "document" in obj or "codex_document" in obj or "title" in obj
+        ):
+            return ""
+        return match.group(0)
+
+    body = re.sub(
+        r"```(?:json)?\s*\n([\s\S]*?)```",
+        _drop_meta,
+        text,
+        flags=re.IGNORECASE,
+    )
+    return title, body.strip()
 
 
 def transform_prompt(mode: str, body: str) -> str:

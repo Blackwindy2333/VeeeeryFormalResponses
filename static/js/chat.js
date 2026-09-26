@@ -99,14 +99,15 @@ export function scrollToBottom(smooth = true) {
 }
 
 function messagesToApi(session) {
-  // 仅将用户/助手正文送入上下文，去掉 metadata 代码块
+  // 仅将用户/助手正文送入上下文，去掉 metadata 与空占位消息
   return session.messages
     .filter((m) => m.role === "user" || m.role === "assistant")
     .map((m) => {
       if (m.role === "user") return { role: "user", content: m.content };
       const parsed = m.parsed || parseDocumentMeta(m.content || "");
       return { role: "assistant", content: parsed.body || m.content || "" };
-    });
+    })
+    .filter((m) => String(m.content || "").trim() !== "");
 }
 
 export async function sendMessage(text, { regenerate = false, transform = null } = {}) {
@@ -143,6 +144,7 @@ export async function sendMessage(text, { regenerate = false, transform = null }
 
   try {
     const { api } = await import("./api.js");
+    let doneFired = false;
     await api.streamChat({
       messages: messagesToApi(store.getActiveSession()),
       docType: store.state.ui.docType,
@@ -161,6 +163,7 @@ export async function sendMessage(text, { regenerate = false, transform = null }
         setStatus("深度思考中…");
       },
       onDone: (payload) => {
+        doneFired = true;
         const parsed = parseDocumentMeta(full || payload?.content || "");
         const usage = payload?.usage || null;
         store.updateMessage(session.id, assistant.id, {
@@ -180,6 +183,15 @@ export async function sendMessage(text, { regenerate = false, transform = null }
         }
       },
     });
+    if (!doneFired) {
+      const parsed = parseDocumentMeta(full);
+      store.updateMessage(session.id, assistant.id, {
+        content: full || "（响应中断）",
+        parsed,
+        streaming: false,
+        elapsedMs: Date.now() - started,
+      });
+    }
   } catch (err) {
     if (err?.name === "AbortError") {
       const parsed = parseDocumentMeta(full);

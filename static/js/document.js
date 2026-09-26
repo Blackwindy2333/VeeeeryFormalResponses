@@ -1,4 +1,4 @@
-﻿import { escapeHtml, renderMarkdownLite, formatDateGroup } from "./util.js";
+import { escapeHtml, renderMarkdownLite, formatDateGroup } from "./util.js";
 
 /**
  * 解析模型回复中的文档 metadata。
@@ -41,7 +41,7 @@ export function buildDocumentHtml({
   const greeting = escapeHtml(doc.greeting || "尊敬的阅办人：");
   const closing = escapeHtml(doc.closing || "此致");
   const signature = escapeHtml(doc.signature || "智能助手");
-  const roleTitle = escapeHtml(doc.roleTitle || "");
+  const roleTitle = escapeHtml(doc.role_title || doc.roleTitle || "");
   const title = escapeHtml(meta?.title || "（未识别标题）");
   const now = new Date();
   const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
@@ -142,7 +142,7 @@ export function extractDocumentPlain(meta, bodyText, config, docType) {
     plainTextFromMarkdown(bodyText),
     "",
     doc.closing || "",
-    `${doc.roleTitle ? doc.roleTitle + "\n" : ""}${doc.signature || ""}`,
+    `${doc.role_title || doc.roleTitle ? (doc.role_title || doc.roleTitle) + "\n" : ""}${doc.signature || ""}`,
     dateStr,
     "",
     `（文种：${docType}；演示生成，无法定效力）`,

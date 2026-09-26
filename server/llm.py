@@ -73,22 +73,22 @@ def build_payload(
     if mt is not None:
         payload["max_tokens"] = int(mt)
 
-    # 思考模式：优先透传 reasoning_effort；同时兼容 MiMo extra_body.thinking
+    # 思考模式：HTTP 请求体中应是顶层 "thinking" 字段（SDK 的 extra_body 只是展开到顶层）。
+    # 同时透传 reasoning_effort，供 OpenAI 系兼容接口使用。
     if use_thinking:
         payload["reasoning_effort"] = effort
-        payload["extra_body"] = {
-            "thinking": {"type": "enabled", "effort": effort},
-        }
+        payload["thinking"] = {"type": "enabled", "effort": effort}
     else:
-        payload["extra_body"] = {"thinking": {"type": "disabled"}}
-        # 思考关闭时部分厂商不识别 reasoning_effort，故不传
+        payload["thinking"] = {"type": "disabled"}
 
-    # 工具调用：仅开关。开启时附带占位 tools 会被第三方拒识，
-    # 因此 MVP 只控制 tool_choice；真正 tools schema 由提供商侧配置时再传入。
+    # 工具调用：仅开关。开启时 tool_choice=auto；关闭时不传 tool_choice，
+    # 避免“无 tools 却带 tool_choice=none”被部分兼容端点拒绝。
     if use_tools:
         payload["tool_choice"] = "auto"
-    else:
-        payload["tool_choice"] = "none"
+
+    # 流式时请求 usage，否则部分服务在流式响应中不返回 token 用量。
+    if stream:
+        payload["stream_options"] = {"include_usage": True}
 
     return payload
 
